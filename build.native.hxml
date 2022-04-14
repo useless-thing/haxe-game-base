@@ -1,0 +1,5 @@
+_base.hxml
+-D windowSize=1280x720
+-hl out/native/main.c
+-lib hlsdl
+-D hlgen.makefile=vs2017

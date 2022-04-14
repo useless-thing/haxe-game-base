@@ -1,0 +1,10 @@
+redist/
+bin/
+dump/
+docs/
+res/.tmp/
+out/
+# VScode
+.vscode/settings.json
+node_modules/
+.vercel

@@ -1,0 +1,3 @@
+_base.hxml
+-dce std
+-js out/web/index.js
