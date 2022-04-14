@@ -12,6 +12,11 @@ export const HAXE_SERVER_PORT = 60000
 export const DEV_SERVER_PORT = 3000
 export const DEV_WEBSOCKET_PORT = 30000
 
+
+export const formatTime = (t: number) => {
+  return Math.floor(t) + 'ms'
+}
+
 export const startWatch = () => chokidar.watch(SRC)
 
 

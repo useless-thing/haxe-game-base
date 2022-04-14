@@ -8,7 +8,17 @@ import { WebSocketServer } from 'ws'
 import handler from 'serve-handler'
 import http from 'http'
 
-import { ROOT, startWatch, SRC, WEB, ASSETS, HAXE_SERVER_PORT, DEV_SERVER_PORT, DEV_WEBSOCKET_PORT } from '../common'
+import {
+  ROOT,
+  startWatch,
+  SRC,
+  WEB,
+  ASSETS,
+  HAXE_SERVER_PORT,
+  DEV_SERVER_PORT,
+  DEV_WEBSOCKET_PORT,
+  formatTime
+} from '../utils'
 
 const server = http.createServer((request, response) => {
   return handler(request, response, {
@@ -24,9 +34,7 @@ const wss = new WebSocketServer({
   port: DEV_WEBSOCKET_PORT
 })
 
-const formatTime = (t: number) => {
-  return Math.floor(t) + 'ms'
-}
+
 
 const buildWeb = (tag: string) => {
   const spinner = ora('building').start()

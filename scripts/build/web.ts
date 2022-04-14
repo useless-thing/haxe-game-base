@@ -6,7 +6,7 @@ import { nanoid } from 'nanoid'
 import { performance } from 'perf_hooks'
 import ora from 'ora'
 
-import { ASSETS, fileTree, ROOT } from '../common'
+import { ASSETS, fileTree, ROOT } from '../utils'
 
 const WEB = join(ROOT, 'out/web')
 
