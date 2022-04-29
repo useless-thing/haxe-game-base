@@ -16,7 +16,9 @@ const hash = nanoid(8).toLocaleLowerCase()
 
 const spinner = ora('Building...').start()
 
-fs.rmSync(WEB, { recursive: true })
+if (fs.existsSync(WEB)) {
+  fs.rmSync(WEB, { recursive: true })
+}
 
 if (fs.existsSync(join(WEB, 'dev.js'))) {
   fs.rmSync(join(WEB, 'dev.js'))
