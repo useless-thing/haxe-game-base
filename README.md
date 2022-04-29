@@ -1,4 +1,4 @@
-# Haxe + HeapsIO
+# Haxe + HeapsIO + Modern JS GameBase
 
 Based on [deepnight/gameBase](https://github.com/deepnight/gameBase)
 
@@ -50,6 +50,14 @@ sh build.binary.sh
 ./game
 ```
 
+## Others
+
+- Sync with [deepnight/gameBase](https://github.com/deepnight/gameBase)
+
+```sh
+pnpm sync
+```
+
 ## Notes
 
--
+- [Compiling HashLink on macOS Apple Silicon](https://community.haxe.org/t/compiling-hashlink-on-macos-apple-silicon/3150)
