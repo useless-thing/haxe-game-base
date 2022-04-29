@@ -9,7 +9,7 @@ pnpm i
 ```
 
 ```sh
-pnpm setup
+pnpm setup:haxe
 ```
 
 ## Dev
