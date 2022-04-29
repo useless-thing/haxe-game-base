@@ -19,9 +19,20 @@ enum GameAction {
 	ScreenshotMode;
 }
 
+/** Entity state machine. Each entity can only have 1 active State at a time. **/
+enum State {
+	Normal;
+}
+
+
+/** Entity Affects have a limited duration in time and you can stack different affects. **/
 enum Affect {
 	Stun;
 }
 
 enum LevelMark {
+}
+
+enum abstract LevelSubMark(Int) to Int {
+	var None; // 0
 }

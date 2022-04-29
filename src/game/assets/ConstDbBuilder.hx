@@ -19,6 +19,7 @@ typedef CastleDbJson = {
 			values: Array<{
 				value : Dynamic,
 				valueName : String,
+				subValues: Dynamic,
 				isInteger : Bool,
 				doc : String,
 			}>,
@@ -29,9 +30,12 @@ typedef CastleDbJson = {
 class ConstDbBuilder {
 
 	/**
-		Provide source files (JSON or CastleDB) to extract constants from.
+		Generate a class based on fields extracted from provided source files (JSON or CastleDB). Then return an instance of this class to be stored in some static var. Typically:
+		```haxe
+		public static var db = ConstDbBuilder.buildVar(["data.cdb", "const.json"]);
+		```
 	**/
-	public static macro function build(dbFileNames:Array<String>) {
+	public static macro function buildVar(dbFileNames:Array<String>) {
 		var pos = Context.currentPos();
 		var rawMod = Context.getLocalModule();
 		var modPack = rawMod.split(".");
@@ -128,7 +132,7 @@ class ConstDbBuilder {
 					kind = FVar(macro:String);
 
 				case _:
-					Context.warning('Unsupported value type "${Type.typeof(val)}" for $k', jsonPos);
+					Context.warning('Unsupported JSON type "${Type.typeof(val)}" for $k', jsonPos);
 			}
 
 			// Add field and default value
@@ -196,6 +200,29 @@ class ConstDbBuilder {
 			return [];
 		}
 
+		// List sub-values types
+		var subValueTypes : Map<String,{ ct:ComplexType, typeStr:String }> = new Map();
+		for(sheet in json.sheets) {
+			if( sheet.name.indexOf("ConstDb")<0 || sheet.name.indexOf("@subValues")<0 )
+				continue;
+			inline function _unsupported(typeName:String, valueName:String) {
+				Context.fatalError("Unsupported CastleDB type "+typeName+" for sub-value "+valueName, pos);
+				return null;
+			}
+			for(col in sheet.columns) {
+				var ct : ComplexType = switch col.typeStr {
+					case "1": macro:String;
+					case "2": macro:Bool;
+					case "3": macro:Int;
+					case "4": macro:Float;
+					case "11": macro:Int;
+					case _: _unsupported(col.typeStr, col.name);
+				}
+				if( ct!=null )
+					subValueTypes.set(col.name, { ct:ct, typeStr:col.typeStr });
+			}
+		}
+
 		// List constants
 		var fields : Array<Field> = [];
 		var valid = false;
@@ -216,25 +243,102 @@ class ConstDbBuilder {
 					var valuesFields : Array<Field> = [];
 					var valuesIniters : Array<ObjectField> = [];
 					for( v in l.values ) {
-						// Value field def
+						var doc = (v.doc==null ? v.valueName : v.doc ) + '\n\n*From $fileName* ';
 						var vid = cleanupIdentifier(v.valueName);
-						valuesFields.push({
-							name: vid,
-							pos: pos,
-							doc: (v.doc==null ? v.valueName : v.doc ) + '\n\n*From $fileName* ',
-							kind: FVar( v.isInteger ? macro:Int : macro:Float ),
-						});
-						// Initial value setter
-						if( v.isInteger && v.value!=Std.int(v.value) )
-							Context.warning('[$fileName] "${l.constId}.${v.valueName}" is a Float instead of an Int', pos);
-						var cleanVal = Std.string( v.isInteger ? Std.int(v.value) : v.value );
-						valuesIniters.push({
-							field: vid,
-							expr: {
+
+						if( v.subValues!=null && Reflect.fields(v.subValues).length>0 ) {
+							// Value is an object with sub fields
+							var fields : Array<Field> = [];
+							var initers : Array<ObjectField> = [];
+
+							// Read sub values
+							for(k in Reflect.fields(v.subValues)) {
+								if( k=="_value" )
+									Context.fatalError('[$fileName] "${l.constId}.${v.valueName}" value name "_value" is not allowed.', pos);
+
+								var ct = subValueTypes.exists(k) ? subValueTypes.get(k).ct : (macro:Float);
+								fields.push({
+									name: k,
+									kind: FVar(ct),
+									pos: pos,
+									doc: doc,
+								});
+
+								var rawVal = Reflect.field(v.subValues, k);
+								var const : Constant = !subValueTypes.exists(k)
+									? CFloat( Std.string(rawVal) )
+									: switch subValueTypes.get(k).typeStr {
+										case "1": CString(rawVal);
+										case "2": CIdent( Std.string(rawVal) );
+										case "3": CInt( Std.string(rawVal) );
+										case "4": CFloat( Std.string(rawVal) );
+										case "11": CInt( Std.string(rawVal) );
+										case _:
+											Context.fatalError("Unexpected CastleDB typeStr "+subValueTypes.get(k).typeStr+" for sub-value init expr", pos);
+									}
+								initers.push({
+									field: k,
+									expr: { expr:EConst(const), pos:pos },
+								});
+							}
+
+							// Also include column value if it's not zero
+							if( v.value!=0 ) {
+								fields.push({
+									name: "_value",
+									pos: pos,
+									doc: doc,
+									kind: FVar( v.isInteger ? macro:Int : macro:Float ),
+								});
+								if( v.isInteger && v.value != Std.int(v.value) )
+									Context.warning('[$fileName] "${l.constId}.${v.valueName}" is a Float instead of an Int', pos);
+								var cleanVal = Std.string( v.isInteger ? Std.int(v.value) : v.value );
+								initers.push({
+									field: "_value",
+									expr: {
+										pos: pos,
+										expr: EConst( v.isInteger ? CInt(cleanVal) : CFloat(cleanVal) ),
+									},
+								});
+							}
+
+							// Value definition
+							valuesFields.push({
+								name: vid,
 								pos: pos,
-								expr: EConst( v.isInteger ? CInt(cleanVal) : CFloat(cleanVal) ),
-							},
-						});
+								doc: (v.doc==null ? v.valueName : v.doc ) + '\n\n*From $fileName* ',
+								kind: FVar( TAnonymous(fields) ),
+							});
+							// Value init
+							valuesIniters.push({
+								field: vid,
+								expr: {
+									pos: pos,
+									expr: EObjectDecl(initers),
+								},
+							});
+						}
+						else {
+							// Simple value (int/float)
+							valuesFields.push({
+								name: vid,
+								pos: pos,
+								doc: doc,
+								kind: FVar( v.isInteger ? macro:Int : macro:Float ),
+							});
+
+							// Initial value setter
+							if( v.isInteger && v.value!=Std.int(v.value) )
+								Context.warning('[$fileName] "${l.constId}.${v.valueName}" is a Float instead of an Int', pos);
+							var cleanVal = Std.string( v.isInteger ? Std.int(v.value) : v.value );
+							valuesIniters.push({
+								field: vid,
+								expr: {
+									pos: pos,
+									expr: EConst( v.isInteger ? CInt(cleanVal) : CFloat(cleanVal) ),
+								},
+							});
+						}
 					}
 
 					fields.push({
@@ -256,7 +360,7 @@ class ConstDbBuilder {
 			return [];
 		}
 
-		// Reloader
+		// CDB hot reloader
 		var cdbJsonType = Context.getType("ConstDbBuilder.CastleDbJson").toComplexType();
 		fields.push({
 			pos:pos,
@@ -280,11 +384,29 @@ class ConstDbBuilder {
 								obj = {}
 								Reflect.setField(this, l.constId, obj);
 							}
-							for(v in l.values)
-								if( v.isInteger )
-									Reflect.setField(obj, v.valueName, Std.int(v.value));
-								else
-									Reflect.setField(obj, v.valueName, v.value);
+							for(v in l.values) {
+								var subValues = v.subValues==null ? [] : Reflect.fields(v.subValues);
+								if( subValues.length>0 ) {
+									// Reload sub values object
+									var subObj = Reflect.field(obj, v.valueName);
+									if( subObj==null ) {
+										subObj = {};
+										Reflect.setField(obj, v.valueName, subObj);
+									}
+									for(k in subValues)
+										Reflect.setField(subObj, k, Reflect.field(v.subValues, k));
+
+									// Also include (or remove) _value
+									if( v.value!=0 )
+										Reflect.setField(subObj, "_value", v.isInteger ? Std.int(v.value) : v.value );
+									else
+										Reflect.deleteField(subObj, "_value");
+								}
+								else {
+									// Reload int/float value
+									Reflect.setField(obj, v.valueName, v.isInteger ? Std.int(v.value) : v.value );
+								}
+							}
 						}
 					}
 					onReload();
