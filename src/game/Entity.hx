@@ -1,6 +1,6 @@
 class Entity {
-    public static var ALL : Array<Entity> = [];
-    public static var GC : Array<Entity> = [];
+    public static var ALL : FixedArray<Entity> = new FixedArray(1024);
+    public static var GC : FixedArray<Entity> = new FixedArray(ALL.maxSize);
 
 	// Various getters to access all important stuff easily
 	public var app(get,never) : App; inline function get_app() return App.ME;
@@ -78,10 +78,16 @@ class Entity {
 	/** Pixel width of entity **/
 	public var wid(default,set) : Float = Const.GRID;
 		inline function set_wid(v) { invalidateDebugBounds=true;  return wid=v; }
+	public var iwid(get,set) : Int;
+		inline function get_iwid() return M.round(wid);
+		inline function set_iwid(v:Int) { invalidateDebugBounds=true; wid=v; return iwid; }
 
 	/** Pixel height of entity **/
 	public var hei(default,set) : Float = Const.GRID;
 		inline function set_hei(v) { invalidateDebugBounds=true;  return hei=v; }
+	public var ihei(get,set) : Int;
+		inline function get_ihei() return M.round(hei);
+		inline function set_ihei(v:Int) { invalidateDebugBounds=true; hei=v; return ihei; }
 
 	/** Inner radius in pixels (ie. smallest value between width/height, then divided by 2) **/
 	public var innerRadius(get,never) : Float;
@@ -226,6 +232,13 @@ class Entity {
 		if( ui.Console.ME.hasFlag("bounds") )
 			enableDebugBounds();
     }
+
+
+	/** Remove sprite from display context. Only do that if you're 100% sure your entity won't need the `spr` instance itself. **/
+	function noSprite() {
+		spr.setEmptyTexture();
+		spr.remove();
+	}
 
 
 	function set_pivotX(v) {
@@ -415,8 +428,8 @@ class Entity {
 
 	/** Check if the grid-based line between this and given target isn't blocked by some obstacle **/
 	public inline function sightCheck(?e:Entity, ?tcx:Int, ?tcy:Int) {
-		if( e!=this )
-			return dn.Bresenham.checkThinLine(cx, cy, e.cx, e.cy, canSeeThrough);
+		if( e!=null)
+			return e==this ? true : dn.Bresenham.checkThinLine(cx, cy, e.cx, e.cy, canSeeThrough);
 		else
 			return dn.Bresenham.checkThinLine(cx, cy, tcx, tcy, canSeeThrough);
 	}
@@ -454,19 +467,22 @@ class Entity {
 			debugBounds = null;
 		}
 
-		cd.destroy();
+		cd.dispose();
 		cd = null;
+
+		ucd.dispose();
+		ucd = null;
     }
 
 
 	/** Print some numeric value below entity **/
-	public inline function debugFloat(v:Float, ?c=0xffffff) {
+	public inline function debugFloat(v:Float, c:Col=0xffffff) {
 		debug( pretty(v), c );
 	}
 
 
 	/** Print some value below entity **/
-	public inline function debug(?v:Dynamic, ?c=0xffffff) {
+	public inline function debug(?v:Dynamic, c:Col=0xffffff) {
 		#if debug
 		if( v==null && debugLabel!=null ) {
 			debugLabel.remove();
@@ -502,7 +518,7 @@ class Entity {
 	}
 
 	function renderDebugBounds() {
-		var c = Color.makeColorHsl((uid%20)/20, 1, 1);
+		var c = Col.fromHsl((uid%20)/20, 1, 1);
 		debugBounds.clear();
 
 		// Bounds rect
@@ -645,7 +661,7 @@ class Entity {
 	}
 
 	/** Blink `spr` briefly (eg. when damaged by something) **/
-	public function blink(c:UInt) {
+	public function blink(c:Col) {
 		blinkColor.setColor(c);
 		cd.setS("keepBlink",0.06);
 	}

@@ -13,6 +13,7 @@ class Console extends h2d.Console {
 
 		logTxt.filter = new dn.heaps.filter.PixelOutline();
 		scale(2); // TODO smarter scaling for 4k screens
+		logTxt.condenseWhite = false;
 		errorColor = 0xff6666;
 
 		// Settings
@@ -52,34 +53,55 @@ class Console extends h2d.Console {
 				});
 			});
 
+			// Garbage collector
+			this.addCommand("gc", [{ name:"state", t:AInt, opt:true }], (?state:Int)->{
+				if( !dn.Gc.isSupported() )
+					log("GC is not supported on this platform", Red);
+				else {
+					if( state!=null )
+						dn.Gc.setState(state!=0);
+					dn.Gc.runNow();
+					log("GC forced (current state: "+(dn.Gc.isActive() ? "active" : "inactive" )+")", dn.Gc.isActive()?Green:Yellow);
+				}
+			});
+
 			// Level marks
+			var allLevelMarks : Array<{ name:String, value:Int }>;
+			allLevelMarks = dn.MacroTools.getAbstractEnumValues(Types.LevelMark);
 			this.addCommand(
 				"mark",
 				[
-					{ name:"levelMark", t:AEnum(Types.LevelMark.getConstructors()) },
+					{ name:"levelMark", t:AEnum( allLevelMarks.map(m->m.name) ), opt:true },
 					{ name:"bit", t:AInt, opt:true },
 				],
-				(k, bit:Null<Int>)->{
+				(k:String, bit:Null<Int>)->{
 					if( !Game.exists() ) {
 						error('Game is not running');
 						return;
 					}
-					var mark = try LevelMark.createByName(k) catch(_) null;
-					if( mark==null ) {
+					if( k==null ) {
+						// Game.ME.level.clearDebug();
+						return;
+					}
+
+					var bit : Null<LevelSubMark> = cast bit;
+					var mark = -1;
+					for(m in allLevelMarks)
+						if( m.name==k ) {
+							mark = m.value;
+							break;
+						}
+					if( mark<0 ) {
 						error('Unknown level mark $k');
 						return;
 					}
 
 					var col = 0xffcc00;
 					log('Displaying $mark (bit=$bit)...', col);
-					var l = Game.ME.level;
-					for(cy in 0...l.cHei)
-					for(cx in 0...l.cWid)
-						if( bit==null && l.marks.hasMark(mark,cx,cy) || bit!=null && l.marks.hasMarkAndBit(mark, bit, cx,cy) )
-							Game.ME.fx.markerCase(cx,cy, 10, col);
-
+					// Game.ME.level.renderDebugMark(cast mark, bit);
 				}
 			);
+			this.addAlias("m","mark");
 		#end
 
 		// List all active dn.Process
@@ -100,14 +122,7 @@ class Console extends h2d.Console {
 		#end
 
 		// Create a stats box
-		this.addCommand("fps", [], ()->{
-			if( stats!=null ) {
-				stats.destroy();
-				stats = null;
-			}
-			else
-				stats = new dn.heaps.StatsBox(App.ME);
-		});
+		this.addCommand("fps", [], ()->toggleStats());
 		this.addAlias("stats","fps");
 
 		// Misc flag aliases
@@ -115,6 +130,30 @@ class Console extends h2d.Console {
 		addFlagCommandAlias("affect");
 		addFlagCommandAlias("scroll");
 		addFlagCommandAlias("cam");
+	}
+
+	public function disableStats() {
+		if( stats!=null ) {
+			stats.destroy();
+			stats = null;
+		}
+	}
+
+	public function enableStats() {
+		disableStats();
+		stats = new dn.heaps.StatsBox(App.ME);
+		stats.addFpsChart();
+		stats.addDrawCallsChart();
+		#if hl
+		stats.addMemoryChart();
+		#end
+	}
+
+	public function toggleStats() {
+		if( stats!=null )
+			disableStats();
+		else
+			enableStats();
 	}
 
 	override function getCommandSuggestion(cmd:String):String {

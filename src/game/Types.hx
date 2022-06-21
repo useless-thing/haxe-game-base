@@ -1,36 +1,37 @@
-/**	This enum is used by the Controller class to bind general game actions to actual keyboard keys or gamepad buttons. **/
-enum GameAction {
-	MoveLeft;
-	MoveRight;
-	MoveUp;
-	MoveDown;
+/**	This abstract enum is used by the Controller class to bind general game actions to actual keyboard keys or gamepad buttons. **/
+enum abstract GameAction(Int) to Int {
+	var MoveLeft;
+	var MoveRight;
+	var MoveUp;
+	var MoveDown;
 
-	Jump;
-	Restart;
+	var Jump;
+	var Restart;
 
-	MenuCancel;
-	Pause;
+	var MenuCancel;
+	var Pause;
 
-	ToggleDebugDrone;
-	DebugDroneZoomIn;
-	DebugDroneZoomOut;
-	DebugTurbo;
-	DebugSlowMo;
-	ScreenshotMode;
+	var ToggleDebugDrone;
+	var DebugDroneZoomIn;
+	var DebugDroneZoomOut;
+	var DebugTurbo;
+	var DebugSlowMo;
+	var ScreenshotMode;
 }
 
 /** Entity state machine. Each entity can only have 1 active State at a time. **/
-enum State {
-	Normal;
+enum abstract State(Int) {
+	var Normal;
 }
 
 
 /** Entity Affects have a limited duration in time and you can stack different affects. **/
-enum Affect {
-	Stun;
+enum abstract Affect(Int) {
+	var Stun;
 }
 
-enum LevelMark {
+enum abstract LevelMark(Int) to Int {
+	var Coll_Wall;
 }
 
 enum abstract LevelSubMark(Int) to Int {

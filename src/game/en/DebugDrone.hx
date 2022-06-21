@@ -7,7 +7,7 @@ package en;
 @:access(Camera)
 class DebugDrone extends Entity {
 	public static var ME : DebugDrone;
-	static var DEFAULT_COLOR = 0x00ff00;
+	static var DEFAULT_COLOR : Col = 0x00ff00;
 
 	var ca : ControllerAccess<GameAction>;
 	var prevCamTarget : Null<Entity>;
@@ -64,8 +64,8 @@ class DebugDrone extends Entity {
 		// <----- HERE: add your own specific inits, like setting drone gravity to zero, updating collision behaviors etc.
 	}
 
-	inline function setColor(c:Int) {
-		g.color.setColor( Color.addAlphaF(c) );
+	inline function setColor(c:Col) {
+		g.color.setColor( c.withAlpha() );
 	}
 
 	override function dispose() {

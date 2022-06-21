@@ -28,11 +28,15 @@ class App extends dn.Process {
 		initController();
 
 		// Create console (open with [²] key)
-		new ui.Console(Assets.fontPixel, scene); // init debug console
+		new ui.Console(Assets.fontPixelMono, scene); // init debug console
 
 		// Optional screen that shows a "Click to start/continue" message when the game client looses focus
 		#if js
 		new dn.heaps.GameFocusHelper(scene, Assets.fontPixel);
+		#end
+
+		#if debug
+		Console.ME.enableStats();
 		#end
 
 		startGame();
@@ -190,7 +194,7 @@ class App extends dn.Process {
 
 	/** Init game controller and default key bindings **/
 	function initController() {
-		controller = new dn.heaps.input.Controller(GameAction);
+		controller = dn.heaps.input.Controller.createFromAbstractEnum(GameAction);
 
 		// Gamepad bindings
 		controller.bindPadLStick4(MoveLeft, MoveRight, MoveUp, MoveDown);
@@ -274,6 +278,14 @@ class App extends dn.Process {
 		if( ui.Console.ME.isActive() )
 			cd.setF("consoleRecentlyActive",2);
 
+
+		// Mem track reporting
+		#if debug
+		if( ca.isKeyboardDown(K.SHIFT) && ca.isKeyboardPressed(K.ENTER) ) {
+			Console.ME.runCommand("/cls");
+			dn.debug.MemTrack.report( (v)->Console.ME.log(v,Yellow) );
+		}
+		#end
 
     }
 }

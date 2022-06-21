@@ -10,8 +10,8 @@ class Bar extends h2d.Object {
 	public var innerBarHeight(get,never) : Float;
 	public var outerWidth(get,never) : Float;
 	public var outerHeight(get,never) : Float;
-	public var color(default,set) : UInt;
-	public var defaultColor(default,null) : UInt;
+	public var color(default,set) : Col;
+	public var defaultColor(default,null) : Col;
 	var padding : Int;
 	var oldBarSpeed : Float;
 
@@ -21,23 +21,23 @@ class Bar extends h2d.Object {
 	var curValue : Float;
 	var curMax : Float;
 
-	public function new(wid:Int, hei:Int, c:UInt, ?p:h2d.Object) {
+	public function new(wid:Int, hei:Int, c:Col, ?p:h2d.Object) {
 		super(p);
 
 		curValue = 0;
 		curMax = 1;
 		cd = new dn.Cooldown(Const.FPS);
 
-		bg = new h2d.ScaleGrid( Assets.tiles.getTile(Assets.tilesDict.uiBarBg), 2, 2, this );
+		bg = new h2d.ScaleGrid( Assets.tiles.getTile(D.tiles.uiBarBg), 2, 2, this );
 		bg.colorAdd = blinkColor = new h3d.Vector();
 
-		bar = new h2d.ScaleGrid( Assets.tiles.getTile(Assets.tilesDict.uiBar), 1,1, this );
+		bar = new h2d.ScaleGrid( Assets.tiles.getTile(D.tiles.uiBar), 1,1, this );
 
 		setSize(wid,hei,1);
 		defaultColor = color = c;
 	}
 
-	public function enableOldValue(oldBarColor:UInt, speed=1.0) {
+	public function enableOldValue(oldBarColor:Col, speed=1.0) {
 		if( oldBar!=null )
 			oldBar.remove();
 		oldBar = new h2d.ScaleGrid( h2d.Tile.fromColor(oldBarColor,3,3), 1, 1 );
@@ -61,25 +61,25 @@ class Bar extends h2d.Object {
 		gradTg.setDefaultColor(0x0, alpha);
 
 		var x = step-1;
-		var t = Assets.tiles.getTile(Assets.tilesDict.pixel);
+		var t = Assets.tiles.getTile(D.tiles.pixel);
 		while( x<innerBarMaxWidth ) {
 			gradTg.addTransform(bar.x+x, bar.y, 1, innerBarHeight, 0, t);
 			x+=step;
 		}
 	}
 
-	public function addGraduation(xRatio:Float, c:UInt, ?alpha=1.0) {
+	public function addGraduation(xRatio:Float, c:Col, ?alpha=1.0) {
 		if( gradTg==null ) {
 			gradTg = new h2d.TileGroup(Assets.tiles.tile, this);
 			gradTg.colorAdd = blinkColor;
 		}
 		gradTg.setDefaultColor(c, alpha);
-		gradTg.addTransform( bar.x+Std.int(innerBarMaxWidth*xRatio), bar.y, 1, innerBarHeight, 0, Assets.tiles.getTile(Assets.tilesDict.pixel) );
+		gradTg.addTransform( bar.x+Std.int(innerBarMaxWidth*xRatio), bar.y, 1, innerBarHeight, 0, Assets.tiles.getTile(D.tiles.pixel) );
 	}
 
-	inline function set_color(c) {
-		bar.color.setColor( Color.addAlphaF(c) );
-		bg.color.setColor( Color.addAlphaF(Color.toBlack(c,0.8)) );
+	inline function set_color(c:Col) {
+		bar.color.setColor( c.withAlpha() );
+		bg.color.setColor( c.toBlack(0.8).withAlpha() );
 		return color = c;
 	}
 
@@ -126,8 +126,8 @@ class Bar extends h2d.Object {
 			oldBar.width = 0;
 	}
 
-	public function blink(?c:UInt, ?a=1.0) {
-		blinkColor.setColor( Color.addAlphaF(c==null ? color : c,a) );
+	public function blink(?c:Col, ?a=1.0) {
+		blinkColor.setColor( (c==null ? color : c).withAlpha(a) );
 		cd.setS("blinkMaintain", 0.15 * 1/oldBarSpeed);
 	}
 
