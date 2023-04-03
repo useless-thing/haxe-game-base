@@ -23,6 +23,8 @@ class App extends dn.Process {
 		scene = s;
         createRoot(scene);
 
+		hxd.Window.getInstance().addEventTarget(onWindowEvent);
+
 		initEngine();
 		initAssets();
 		initController();
@@ -31,9 +33,8 @@ class App extends dn.Process {
 		new ui.Console(Assets.fontPixelMono, scene); // init debug console
 
 		// Optional screen that shows a "Click to start/continue" message when the game client looses focus
-		#if js
-		new dn.heaps.GameFocusHelper(scene, Assets.fontPixel);
-		#end
+		if( dn.heaps.GameFocusHelper.isUseful() )
+			new dn.heaps.GameFocusHelper(scene, Assets.fontPixel);
 
 		#if debug
 		Console.ME.enableStats();
@@ -42,6 +43,29 @@ class App extends dn.Process {
 		startGame();
 	}
 
+
+	function onWindowEvent(ev:hxd.Event) {
+		switch ev.kind {
+			case EPush:
+			case ERelease:
+			case EMove:
+			case EOver: onMouseEnter(ev);
+			case EOut: onMouseLeave(ev);
+			case EWheel:
+			case EFocus: onWindowFocus(ev);
+			case EFocusLost: onWindowBlur(ev);
+			case EKeyDown:
+			case EKeyUp:
+			case EReleaseOutside:
+			case ETextInput:
+			case ECheck:
+		}
+	}
+
+	function onMouseEnter(e:hxd.Event) {}
+	function onMouseLeave(e:hxd.Event) {}
+	function onWindowFocus(e:hxd.Event) {}
+	function onWindowBlur(e:hxd.Event) {}
 
 
 	#if hl
@@ -109,6 +133,7 @@ class App extends dn.Process {
 	public function setScreenshotMode(v:Bool) {
 		screenshotMode = v;
 
+		Console.ME.runCommand("cls");
 		if( screenshotMode ) {
 			var f = new h2d.filter.ColorMatrix();
 			f.matrix.colorContrast(0.2);
@@ -195,6 +220,14 @@ class App extends dn.Process {
 	/** Init game controller and default key bindings **/
 	function initController() {
 		controller = dn.heaps.input.Controller.createFromAbstractEnum(GameAction);
+		ca = controller.createAccess();
+		ca.lockCondition = ()->return destroyed || anyInputHasFocus();
+
+		initControllerBindings();
+	}
+
+	public function initControllerBindings() {
+		controller.removeBindings();
 
 		// Gamepad bindings
 		controller.bindPadLStick4(MoveLeft, MoveRight, MoveUp, MoveDown);
@@ -205,6 +238,10 @@ class App extends dn.Process {
 		controller.bindPad(MoveRight, DPAD_RIGHT);
 		controller.bindPad(MoveUp, DPAD_UP);
 		controller.bindPad(MoveDown, DPAD_DOWN);
+
+		controller.bindPad(MenuUp, [DPAD_UP, LSTICK_UP]);
+		controller.bindPad(MenuDown, [DPAD_DOWN, LSTICK_DOWN]);
+		controller.bindPad(MenuOk, [A, X]);
 		controller.bindPad(MenuCancel, B);
 
 		// Keyboard bindings
@@ -217,6 +254,10 @@ class App extends dn.Process {
 		controller.bindKeyboard(ScreenshotMode, K.F9);
 		controller.bindKeyboard(Pause, K.P);
 		controller.bindKeyboard(Pause, K.PAUSE_BREAK);
+
+		controller.bindKeyboard(MenuUp, [K.UP, K.Z, K.W]);
+		controller.bindKeyboard(MenuDown, [K.DOWN, K.S]);
+		controller.bindKeyboard(MenuOk, [K.SPACE, K.ENTER, K.F]);
 		controller.bindKeyboard(MenuCancel, K.ESCAPE);
 
 		// Debug controls
@@ -232,10 +273,8 @@ class App extends dn.Process {
 		controller.bindKeyboard(DebugSlowMo, [K.HOME, K.NUMPAD_SUB]);
 		controller.bindPadCombo(ToggleDebugDrone, [LSTICK_PUSH, RSTICK_PUSH]);
 		controller.bindKeyboardCombo(ToggleDebugDrone, [K.D, K.CTRL, K.SHIFT]);
+		controller.bindKeyboardCombo(OpenConsoleFlags, [K.F, K.CTRL, K.SHIFT]);
 		#end
-
-		ca = controller.createAccess();
-		ca.lockCondition = ()->return destroyed || anyInputHasFocus();
 	}
 
 
@@ -249,6 +288,8 @@ class App extends dn.Process {
 
 	override function onDispose() {
 		super.onDispose();
+
+		hxd.Window.getInstance().removeEventTarget( onWindowEvent );
 
 		#if hl
 		hxd.System.exit();
@@ -274,6 +315,9 @@ class App extends dn.Process {
 
 		if( isGamePaused() && ca.isPressed(MenuCancel) )
 			setGamePause(false);
+
+		if( ca.isPressed(OpenConsoleFlags) )
+			Console.ME.runCommand("/flags");
 
 		if( ui.Console.ME.isActive() )
 			cd.setF("consoleRecentlyActive",2);

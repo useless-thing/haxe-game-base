@@ -1,4 +1,4 @@
-class Game extends dn.Process {
+class Game extends AppChildProcess {
 	public static var ME : Game;
 
 	/** Game controller (pad or keyboard) **/
@@ -21,11 +21,11 @@ class Game extends dn.Process {
 
 	/** Slow mo internal values**/
 	var curGameSpeed = 1.0;
-	var slowMos : Map<String, { id:String, t:Float, f:Float }> = new Map();
+	var slowMos : Map<SlowMoId, { id:SlowMoId, t:Float, f:Float }> = new Map();
 
 
 	public function new() {
-		super(App.ME);
+		super();
 
 		ME = this;
 		ca = App.ME.controller.createAccess();
@@ -127,7 +127,7 @@ class Game extends dn.Process {
 		@param sec Realtime second duration of this slowmo
 		@param speedFactor Cumulative multiplier to the Process `tmod`
 	**/
-	public function addSlowMo(id:String, sec:Float, speedFactor=0.3) {
+	public function addSlowMo(id:SlowMoId, sec:Float, speedFactor=0.3) {
 		if( slowMos.exists(id) ) {
 			var s = slowMos.get(id);
 			s.f = speedFactor;
@@ -163,7 +163,7 @@ class Game extends dn.Process {
 		like when hitting an opponent in Street Fighter ;)
 	**/
 	public inline function stopFrame() {
-		ucd.setS("stopFrame", 0.2);
+		ucd.setS("stopFrame", 4/Const.FPS);
 	}
 
 
@@ -180,7 +180,7 @@ class Game extends dn.Process {
 
 		// Update slow-motions
 		updateSlowMos();
-		baseTimeMul = ( 0.2 + 0.8*curGameSpeed ) * ( ucd.has("stopFrame") ? 0.3 : 1 );
+		baseTimeMul = ( 0.2 + 0.8*curGameSpeed ) * ( ucd.has("stopFrame") ? 0.1 : 1 );
 		Assets.tiles.tmod = tmod;
 
 		// Entities post-updates

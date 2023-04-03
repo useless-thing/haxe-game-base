@@ -89,12 +89,34 @@ class LPoint {
 		return new LPoint().setLevelPixel(x,y);
 	}
 
+	public static inline function fromScreen(sx:Float, sy:Float) {
+		return new LPoint().setScreen(sx,sy);
+	}
+
 	/** Init using level grid coords **/
 	public inline function setLevelCase(x,y,?xr=0.5,?yr=0.5) {
 		this.cx = x;
 		this.cy = y;
 		this.xr = xr;
 		this.yr = yr;
+		return this;
+	}
+
+
+	/** Set this point using another LPoint **/
+	public inline function usePoint(other:LPoint) {
+		cx = other.cx;
+		cy = other.cy;
+		xr = other.xr;
+		yr = other.yr;
+	}
+
+	/** Init from screen coord **/
+	public inline function setScreen(sx:Float, sy:Float) {
+		setLevelPixel(
+			( sx - Game.ME.scroller.x ) / Const.SCALE,
+			( sy - Game.ME.scroller.y ) / Const.SCALE
+		);
 		return this;
 	}
 
@@ -118,7 +140,7 @@ class LPoint {
 	}
 
 	/** Return distance to something else, in grid unit **/
-	public inline function distCase(?e:Entity, ?pt:LPoint, ?tcx=0, ?tcy=0, ?txr=0.5, ?tyr=0.5) {
+	public inline function distCase(?e:Entity, ?pt:LPoint, tcx=0, tcy=0, txr=0.5, tyr=0.5) {
 		if( e!=null )
 			return M.dist(this.cx+this.xr, this.cy+this.yr, e.cx+e.xr, e.cy+e.yr);
 		else if( pt!=null )
@@ -128,7 +150,7 @@ class LPoint {
 	}
 
 	/** Distance to something else, in level pixels **/
-	public inline function distPx(?e:Entity, ?pt:LPoint, ?lvlX=0., ?lvlY=0.) {
+	public inline function distPx(?e:Entity, ?pt:LPoint, lvlX=0., lvlY=0.) {
 		if( e!=null )
 			return M.dist(levelX, levelY, e.attachX, e.attachY);
 		else if( pt!=null )
@@ -138,7 +160,7 @@ class LPoint {
 	}
 
 	/** Angle in radians to something else, in level pixels **/
-	public inline function angTo(?e:Entity, ?pt:LPoint, ?lvlX=0., ?lvlY=0.) {
+	public inline function angTo(?e:Entity, ?pt:LPoint, lvlX=0., lvlY=0.) {
 		if( e!=null )
 			return Math.atan2((e.cy+e.yr)-cyf, (e.cx+e.xr)-cxf );
 		else if( pt!=null )

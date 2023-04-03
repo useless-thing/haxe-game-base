@@ -1,4 +1,4 @@
-class Level extends GameProcess {
+class Level extends GameChildProcess {
 	/** Level grid-based width**/
 	public var cWid(default,null): Int;
 	/** Level grid-based height **/
@@ -30,7 +30,7 @@ class Level extends GameProcess {
 		for(cy in 0...cHei)
 		for(cx in 0...cWid) {
 			if( data.l_Collisions.getInt(cx,cy)==1 )
-				marks.set(Coll_Wall, cx,cy);
+				marks.set(M_Coll_Wall, cx,cy);
 		}
 	}
 
@@ -55,7 +55,7 @@ class Level extends GameProcess {
 
 	/** Return TRUE if "Collisions" layer contains a collision value **/
 	public inline function hasCollision(cx,cy) : Bool {
-		return !isValid(cx,cy) ? true : marks.has(Coll_Wall, cx,cy);
+		return !isValid(cx,cy) ? true : marks.has(M_Coll_Wall, cx,cy);
 	}
 
 	/** Render current level**/

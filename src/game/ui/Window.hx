@@ -1,10 +1,10 @@
 package ui;
 
-class Window extends GameProcess {
+class Window extends dn.Process {
 	public var win: h2d.Flow;
 
-	public function new() {
-		super();
+	public function new(?p:dn.Process) {
+		super(p==null ? App.ME : p);
 
 		createRootInLayers(Game.ME.root, Const.DP_UI);
 		root.filter = new h2d.filter.Nothing(); // force pixel perfect rendering
@@ -31,7 +31,7 @@ class Window extends GameProcess {
 	override function onResize() {
 		super.onResize();
 
-		root.scale(Const.UI_SCALE);
+		root.setScale(Const.UI_SCALE);
 
 		var w = M.ceil( w()/Const.UI_SCALE );
 		var h = M.ceil( h()/Const.UI_SCALE );

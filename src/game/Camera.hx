@@ -1,4 +1,4 @@
-class Camera extends GameProcess {
+class Camera extends GameChildProcess {
 	public static var MIN_ZOOM : Float = 1.0;
 	public static var MAX_ZOOM : Float = 10;
 
@@ -179,7 +179,7 @@ class Camera extends GameProcess {
 	public inline function levelToGlobalY(v:Float) return v*Const.SCALE + Game.ME.scroller.y;
 
 	var shakePower = 1.0;
-	public function shakeS(t:Float, ?pow=1.0) {
+	public function shakeS(t:Float, pow=1.0) {
 		cd.setS("shaking", t, false);
 		shakePower = pow;
 	}
@@ -197,7 +197,7 @@ class Camera extends GameProcess {
 
 	/** Apply camera values to Game scroller **/
 	function apply() {
-		if( ui.Console.ME.hasFlag("scroll") )
+		if( ui.Console.ME.hasFlag(F_CameraScrolling) )
 			return;
 
 		var level = Game.ME.level;
@@ -276,9 +276,9 @@ class Camera extends GameProcess {
 		apply();
 
 		// Debug bounds
-		if( ui.Console.ME.hasFlag("cam") && debugBounds==null )
+		if( ui.Console.ME.hasFlag(F_Camera) && debugBounds==null )
 			enableDebugBounds();
-		else if( !ui.Console.ME.hasFlag("cam") && debugBounds!=null )
+		else if( !ui.Console.ME.hasFlag(F_Camera) && debugBounds!=null )
 			disableDebugBounds();
 
 		if( debugBounds!=null ) {

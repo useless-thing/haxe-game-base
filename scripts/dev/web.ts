@@ -1,4 +1,4 @@
-import fs from 'fs'
+import fs from 'fs-extra'
 import { join } from 'path'
 import { exec, execSync, spawn } from 'child_process'
 import { performance } from 'perf_hooks'
@@ -58,6 +58,7 @@ startWatch()
      */
     exec(`haxe --wait ${HAXE_SERVER_PORT}`, { cwd: ROOT })
 
+    fs.ensureDirSync(WEB)
     fs.copyFileSync(join(ASSETS, './dev.js'), join(WEB, 'dev.js'))
     fs.copyFileSync(join(ASSETS, './index.html'), join(WEB, 'index.html'))
     console.log(`watching ${SRC}...`)

@@ -2,7 +2,7 @@ import h2d.Sprite;
 import dn.heaps.HParticle;
 
 
-class Fx extends GameProcess {
+class Fx extends GameChildProcess {
 	var pool : ParticlePool;
 
 	public var bg_add    : h2d.SpriteBatch;
@@ -108,6 +108,19 @@ class Fx extends GameProcess {
 		p.onKill = tf.remove;
 
 		tf.setPosition(p.x-tf.textWidth*0.5, p.y-tf.textHeight*0.5);
+		#end
+	}
+
+
+	public inline function markerLine(fx:Float, fy:Float, tx:Float, ty:Float, c:Col, sec=3.) {
+		#if debug
+		var p = allocMain_add(D.tiles.fxLine, fx,fy);
+		p.setFadeS(1, 0, 0);
+		p.colorize(c);
+		p.setCenterRatio(0,0.5);
+		p.scaleX = M.dist(fx,fy,tx,ty) / p.t.width;
+		p.rotation = Math.atan2(ty-fy, tx-fx);
+		p.lifeS = sec;
 		#end
 	}
 

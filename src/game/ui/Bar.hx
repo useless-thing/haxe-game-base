@@ -13,7 +13,7 @@ class Bar extends h2d.Object {
 	public var color(default,set) : Col;
 	public var defaultColor(default,null) : Col;
 	var padding : Int;
-	var oldBarSpeed : Float;
+	var oldBarSpeed : Float = 1.;
 
 	var blinkColor : h3d.Vector;
 	var gradTg : Null<h2d.TileGroup>;
@@ -49,7 +49,7 @@ class Bar extends h2d.Object {
 		oldBarSpeed = speed;
 	}
 
-	public function setGraduationPx(step:Int, ?alpha=0.5) {
+	public function setGraduationPx(step:Int, alpha=0.5) {
 		if( step<=1 )
 			throw "Invalid bar graduation "+step;
 
@@ -68,7 +68,7 @@ class Bar extends h2d.Object {
 		}
 	}
 
-	public function addGraduation(xRatio:Float, c:Col, ?alpha=1.0) {
+	public function addGraduation(xRatio:Float, c:Col, alpha=1.0) {
 		if( gradTg==null ) {
 			gradTg = new h2d.TileGroup(Assets.tiles.tile, this);
 			gradTg.colorAdd = blinkColor;
@@ -78,8 +78,8 @@ class Bar extends h2d.Object {
 	}
 
 	inline function set_color(c:Col) {
-		bar.color.setColor( c.withAlpha() );
-		bg.color.setColor( c.toBlack(0.8).withAlpha() );
+		bar.color.setColor( c.withAlpha(1) );
+		bg.color.setColor( c.toBlack(0.8).withAlpha(1) );
 		return color = c;
 	}
 
@@ -126,7 +126,7 @@ class Bar extends h2d.Object {
 			oldBar.width = 0;
 	}
 
-	public function blink(?c:Col, ?a=1.0) {
+	public function blink(?c:Col, a=1.0) {
 		blinkColor.setColor( (c==null ? color : c).withAlpha(a) );
 		cd.setS("blinkMaintain", 0.15 * 1/oldBarSpeed);
 	}
